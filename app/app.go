@@ -12,6 +12,7 @@ import (
 	"os"
 )
 
+//
 type Student struct {
 	Subject string `json:"subject"`
 	Grade   int    `json:"grade"`
@@ -40,6 +41,7 @@ func loadConfig() {
 
 // Connects to the database
 func connectDB() (*mongo.Client, error) {
+	
 	uri := os.Getenv("MONGO_URI")
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 
@@ -58,7 +60,7 @@ func saveStudentGrade(c *gin.Context) {
 	err := c.BindJSON(&student)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": "error while binding the request",
+			"error": "Error while binding the request.",
 		})
 		return
 	}
@@ -66,7 +68,7 @@ func saveStudentGrade(c *gin.Context) {
 	client, err := connectDB()
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while connecting to the database",
+			"error": "Error while connecting to the database. ",
 		})
 		return
 	}
@@ -81,12 +83,13 @@ func saveStudentGrade(c *gin.Context) {
 	collection := client.Database("oati-api").Collection("students")
 	subjectCollection := client.Database("oati-api").Collection("subjects")
 
+	//Validate if Subject exists.
 	var subject Subject
 	err = subjectCollection.FindOne(context.Background(), bson.M{"name": student.Subject}).Decode(&subject)
 	print(subject.Name)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": "subject code not found",
+			"error": "subject not found.",
 		})
 		return
 	}
@@ -94,21 +97,22 @@ func saveStudentGrade(c *gin.Context) {
 	_, err = collection.InsertOne(context.Background(), student)
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while inserting the student",
+			"error": "error while inserting the student grade.",
 		})
 		return
 	}
 	c.JSON(201, gin.H{
-		"message": "student saved successfully",
+		"message": "Grade saved successfully. :)",
 	})
 }
 
 func saveSubject(c *gin.Context) {
+	
 	var subject Subject
 	err := c.BindJSON(&subject)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": "error while binding the request",
+			"error": "Error while binding the request...",
 		})
 		return
 	}
@@ -116,7 +120,7 @@ func saveSubject(c *gin.Context) {
 	client, err := connectDB()
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while connecting to the database",
+			"error": "Error while connecting to the database.",
 		})
 		return
 	}
@@ -132,31 +136,33 @@ func saveSubject(c *gin.Context) {
 
 	collection := client.Database("oati-api").Collection("subjects")
 
+	//Validate if exist another registry with same code.
 	err = collection.FindOne(context.Background(), bson.M{"code": subject.Code}).Decode(&existingSubject)
 	if err != nil {
 		_, err = collection.InsertOne(context.Background(), subject)
 		if err != nil {
 			c.JSON(500, gin.H{
-				"error": "error while inserting the subject",
+				"error": "Error saving the subject.",
 			})
 			return
 		}
 	} else {
 		c.JSON(400, gin.H{
-			"error": "subject already exists",
+			"error": "Subject already exists.",
 		})
 		return
 	}
 
 	c.JSON(201, gin.H{
-		"message": "subject saved successfully",
+		"message": "Subject saved successfully.",
 	})
 }
+
 func listAllGrades(c *gin.Context) {
 	client, err := connectDB()
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while connecting to the database",
+			"error": "Error while connecting to the database.",
 		})
 		return
 	}
@@ -170,7 +176,7 @@ func listAllGrades(c *gin.Context) {
 	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while finding the students",
+			"error": "Error while finding students.",
 		})
 	}
 	defer func(cursor *mongo.Cursor, ctx context.Context) {
@@ -183,7 +189,7 @@ func listAllGrades(c *gin.Context) {
 	var students []Student
 	if err = cursor.All(context.Background(), &students); err != nil {
 		c.JSON(500, gin.H{
-			"error": "error while decoding the students",
+			"error": "Error while decoding students.",
 		})
 		return
 	}
