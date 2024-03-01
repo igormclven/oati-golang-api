@@ -2,6 +2,8 @@
 
 Sencillo ejemplo de implementación de un API con persistencia en MongoDB.
 
+Endpoint: https://oati-golang-api.up.railway.app/
+
 
 1. Crear Asignatura
 
@@ -30,6 +32,7 @@ curl --location '{{URL}}/saveGrade' \
 
 3. Listar Notas
 
+GET
 ```
 curl --location 'http://localhost:8080/listAllGrades' \
 --header 'Content-Type: application/json'
