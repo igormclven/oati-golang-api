@@ -204,7 +204,12 @@ func Run() {
 	router.POST("/saveSubject", saveSubject)
 	router.GET("/listAllGrades", listAllGrades)
 
-	err := router.Run(":8080")
+	// Port configuration
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	err := router.Run(":" + port)
 
 	if err != nil {
 		log.Fatal("Error while running the server: ", err)
