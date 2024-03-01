@@ -2,7 +2,11 @@
 
 Sencillo ejemplo de implementación de un API con persistencia en MongoDB.
 
-Endpoint: https://oati-golang-api.up.railway.app/
+Endpoint Front: https://oati-front.netlify.app/
+Repo Front: https://github.com/igormclven/oati-api-front/
+
+Endpoint API: https://oati-golang-api.up.railway.app/
+
 
 
 1. Crear Asignatura
