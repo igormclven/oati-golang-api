@@ -11,15 +11,21 @@ import (
 	"os"
 )
 
-var (
-	router = gin.Default()
-)
-
 type Student struct {
 	Subject string `json:"subject"`
 	Grade   int    `json:"grade"`
 }
 
+type Subject struct {
+	Name string `json:"name"`
+	Code string `json:"code"`
+}
+
+var (
+	router = gin.Default()
+)
+
+// Loads the config from the .env file
 func loadConfig() {
 	envFile, _ := godotenv.Read(".env")
 	for key, value := range envFile {
@@ -30,6 +36,8 @@ func loadConfig() {
 	}
 
 }
+
+// Connects to the database
 func connectDB() (*mongo.Client, error) {
 	uri := os.Getenv("MONGO_URI")
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
@@ -70,6 +78,18 @@ func saveStudentGrade(c *gin.Context) {
 	}(client, context.Background())
 
 	collection := client.Database("oati-api").Collection("students")
+	subjectCollection := client.Database("oati-api").Collection("subjects")
+
+	var subject Subject
+	err = subjectCollection.FindOne(context.Background(), bson.M{"code": student.Subject}).Decode(&subject)
+	print(subject.Name)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": "subject code not found",
+		})
+		return
+	}
+
 	_, err = collection.InsertOne(context.Background(), student)
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -82,6 +102,55 @@ func saveStudentGrade(c *gin.Context) {
 	})
 }
 
+func saveSubject(c *gin.Context) {
+	var subject Subject
+	err := c.BindJSON(&subject)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": "error while binding the request",
+		})
+		return
+	}
+
+	client, err := connectDB()
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": "error while connecting to the database",
+		})
+		return
+	}
+
+	defer func(client *mongo.Client, ctx context.Context) {
+		err := client.Disconnect(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(client, context.Background())
+
+	var existingSubject Subject
+
+	collection := client.Database("oati-api").Collection("subjects")
+
+	err = collection.FindOne(context.Background(), bson.M{"code": subject.Code}).Decode(&existingSubject)
+	if err != nil {
+		_, err = collection.InsertOne(context.Background(), subject)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": "error while inserting the subject",
+			})
+			return
+		}
+	} else {
+		c.JSON(400, gin.H{
+			"error": "subject already exists",
+		})
+		return
+	}
+
+	c.JSON(201, gin.H{
+		"message": "subject saved successfully",
+	})
+}
 func listAllGrades(c *gin.Context) {
 	client, err := connectDB()
 	if err != nil {
@@ -122,8 +191,10 @@ func listAllGrades(c *gin.Context) {
 
 func Run() {
 	loadConfig()
+
 	router.POST("/saveGrade", saveStudentGrade)
-	router.GET("/ListAllGrades", listAllGrades)
+	router.POST("/saveSubject", saveSubject)
+	router.GET("/listAllGrades", listAllGrades)
 
 	err := router.Run(":8080")
 
