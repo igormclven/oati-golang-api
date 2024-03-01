@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -81,7 +82,7 @@ func saveStudentGrade(c *gin.Context) {
 	subjectCollection := client.Database("oati-api").Collection("subjects")
 
 	var subject Subject
-	err = subjectCollection.FindOne(context.Background(), bson.M{"code": student.Subject}).Decode(&subject)
+	err = subjectCollection.FindOne(context.Background(), bson.M{"name": student.Subject}).Decode(&subject)
 	print(subject.Name)
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -190,8 +191,15 @@ func listAllGrades(c *gin.Context) {
 }
 
 func Run() {
+	// Load the config from the .env file
 	loadConfig()
 
+	// Enable CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	router.Use(cors.New(corsConfig))
+
+	// Routes
 	router.POST("/saveGrade", saveStudentGrade)
 	router.POST("/saveSubject", saveSubject)
 	router.GET("/listAllGrades", listAllGrades)
